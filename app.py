@@ -14,9 +14,20 @@ if st.button("Predict"):
     df, prediction = predict_stock(ticker, momentum_days)
     st.subheader(f"Prediction: {prediction}")
 
-    # Plot chart
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=df['Close'], name="Close Price"))
-    fig.add_trace(go.Scatter(x=df.index, y=df['EMA20'], name="EMA20"))
-    fig.add_trace(go.Scatter(x=df.index, y=df['EMA50'], name="EMA50"))
-    st.plotly_chart(fig, use_container_width=True)
+# Plot chart properly using Plotly
+import plotly.graph_objects as go
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=df.index, y=df['Close'], mode='lines', name="Close Price"))
+fig.add_trace(go.Scatter(x=df.index, y=df['EMA20'], mode='lines', name="EMA20"))
+fig.add_trace(go.Scatter(x=df.index, y=df['EMA50'], mode='lines', name="EMA50"))
+
+fig.update_layout(
+    title=f"{ticker} Price and Moving Averages",
+    xaxis_title="Date",
+    yaxis_title="Price ($)",
+    template="plotly_dark",  # matches your Wall-Street fintech theme
+    autosize=True
+)
+
+st.plotly_chart(fig, use_container_width=True)
