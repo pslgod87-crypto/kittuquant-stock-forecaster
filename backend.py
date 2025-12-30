@@ -1,12 +1,9 @@
-# backend.py — Kittu Quant Stock Forecaster
+# backend.py — FINAL FIXED VERSION
 
 import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# -----------------------------
-# Indicator functions
-# -----------------------------
 def RSI(series, period=14):
     delta = series.diff()
     gain = delta.clip(lower=0)
@@ -26,38 +23,36 @@ def MACD(series, fast=12, slow=26, signal=9):
     signal_line = EMA(macd_line, signal)
     return macd_line, signal_line
 
-# -----------------------------
-# Core prediction function
-# -----------------------------
 def predict_stock(ticker, momentum_days=10):
-    # Download 6 months of daily data
-    df = yf.download(ticker, period="6mo", interval="1d")
-    
-    if df.empty:
-        raise ValueError(f"No data found for ticker: {ticker}")
 
-    # Ensure columns are simple
+    df = yf.download(ticker, period="1y", interval="1d")
+
+    if df.empty:
+        return None, "No Data"
+
     df = df[['Open','High','Low','Close','Volume']].copy()
 
-    # Indicators
     df['RSI'] = RSI(df['Close'])
     df['EMA20'] = EMA(df['Close'], 20)
     df['EMA50'] = EMA(df['Close'], 50)
     df['MACD'], df['MACD_signal'] = MACD(df['Close'])
 
-    # Simple scoring
+    df = df.dropna().reset_index()   # remove NaN rows
+
     score = 0
-    if df['RSI'].iloc[-1] < 30:
+    last = df.iloc[-1]
+
+    if last['RSI'] < 30:
         score += 15
-    elif df['RSI'].iloc[-1] > 70:
+    elif last['RSI'] > 70:
         score -= 15
 
-    if df['MACD'].iloc[-1] > df['MACD_signal'].iloc[-1]:
+    if last['MACD'] > last['MACD_signal']:
         score += 10
     else:
         score -= 10
 
-    if df['EMA20'].iloc[-1] > df['EMA50'].iloc[-1]:
+    if last['EMA20'] > last['EMA50']:
         score += 5
     else:
         score -= 5
@@ -66,17 +61,8 @@ def predict_stock(ticker, momentum_days=10):
         prediction = "Likely Up"
     elif score < -10:
         prediction = "Likely Down"
+        prediction = "Likely Down"
     else:
         prediction = "Neutral"
 
-    # -----------------------------
-    # Clean df for plotting
-    # -----------------------------
-    df = df.reset_index()  # Date as column
-    df['Date'] = pd.to_datetime(df['Date'])
-    
-    # Ensure numeric
-    for col in ['Close','EMA20','EMA50']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    
     return df, prediction
