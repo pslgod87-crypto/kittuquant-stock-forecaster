@@ -4,7 +4,10 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# Functions to calculate indicators
+# -----------------------------
+# Indicator functions
+# -----------------------------
+
 def RSI(series, period=14):
     delta = series.diff()
     gain = delta.clip(lower=0)
@@ -24,16 +27,26 @@ def MACD(series, fast=12, slow=26, signal=9):
     signal_line = EMA(macd_line, signal)
     return macd_line, signal_line
 
+# -----------------------------
 # Core prediction function
+# -----------------------------
+
 def predict_stock(ticker, momentum_days=10):
+    # Download 6 months of daily data
     df = yf.download(ticker, period="6mo", interval="1d", auto_adjust=True)
+    
+    # Safety check
+    if df.empty:
+        raise ValueError(f"No data found for ticker: {ticker}")
+    
+    # Calculate indicators
     df['RSI'] = RSI(df['Close'])
     df['EMA20'] = EMA(df['Close'], 20)
     df['EMA50'] = EMA(df['Close'], 50)
     df['MACD'], df['MACD_signal'] = MACD(df['Close'])
 
-    score = 0
     # Simple rule-based scoring
+    score = 0
     if df['RSI'].iloc[-1] < 30:
         score += 15
     elif df['RSI'].iloc[-1] > 70:
@@ -49,11 +62,18 @@ def predict_stock(ticker, momentum_days=10):
     else:
         score -= 5
 
+    # Final prediction
     if score > 10:
         prediction = "Likely Up"
     elif score < -10:
         prediction = "Likely Down"
     else:
         prediction = "Neutral"
+
+    # -----------------------------
+    # Fix index for frontend plotting
+    # -----------------------------
+    df = df.reset_index()  # make Date a column
+    df['Date'] = pd.to_datetime(df['Date'])  # ensure datetime
 
     return df, prediction
