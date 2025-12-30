@@ -4,33 +4,19 @@ import streamlit as st
 from backend import predict_stock
 import plotly.graph_objects as go
 
-# -----------------------------
-# Page setup
-# -----------------------------
 st.set_page_config(page_title="Kittu Quant Stock Forecaster", layout="wide")
 st.title("Kittu Quant Stock Forecaster")
-st.markdown("""
-Enter any stock ticker (e.g., AAPL, TSLA, SPY) and choose the momentum period. 
-The app predicts if the stock is likely to go up, down, or stay neutral.
-""")
+st.markdown("Enter a stock ticker (e.g., AAPL, TSLA, SPY) and momentum period. App predicts likely trend.")
 
-# -----------------------------
-# User inputs
-# -----------------------------
 ticker = st.text_input("Enter Stock Ticker:", "AAPL")
 momentum_days = st.number_input("Momentum Lookback Days:", min_value=5, max_value=30, value=10)
 
-# -----------------------------
-# Prediction button
-# -----------------------------
 if st.button("Predict"):
     try:
         df, prediction = predict_stock(ticker, momentum_days)
-        st.subheader(f"Prediction for {ticker}: {prediction}")
+        st.subheader(f"Prediction: {prediction}")
 
-        # -----------------------------
-        # FIXED Plot chart using df['Date']
-        # -----------------------------
+        # Plot chart
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name="Close Price"))
         fig.add_trace(go.Scatter(x=df['Date'], y=df['EMA20'], mode='lines', name="EMA20"))
