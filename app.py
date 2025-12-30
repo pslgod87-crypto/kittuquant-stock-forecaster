@@ -3,7 +3,6 @@
 import streamlit as st
 from backend import predict_stock
 import plotly.graph_objects as go
-import pandas as pd
 
 # -----------------------------
 # Page setup
@@ -30,7 +29,7 @@ if st.button("Predict"):
         st.subheader(f"Prediction for {ticker}: {prediction}")
 
         # -----------------------------
-        # Plot chart using cleaned df
+        # FIXED Plot chart using df['Date']
         # -----------------------------
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name="Close Price"))
