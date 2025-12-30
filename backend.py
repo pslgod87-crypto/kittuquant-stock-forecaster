@@ -7,7 +7,6 @@ import numpy as np
 # -----------------------------
 # Indicator functions
 # -----------------------------
-
 def RSI(series, period=14):
     delta = series.diff()
     gain = delta.clip(lower=0)
@@ -30,22 +29,23 @@ def MACD(series, fast=12, slow=26, signal=9):
 # -----------------------------
 # Core prediction function
 # -----------------------------
-
 def predict_stock(ticker, momentum_days=10):
     # Download 6 months of daily data
-    df = yf.download(ticker, period="6mo", interval="1d", auto_adjust=True)
+    df = yf.download(ticker, period="6mo", interval="1d")
     
-    # Safety check
     if df.empty:
         raise ValueError(f"No data found for ticker: {ticker}")
-    
-    # Calculate indicators
+
+    # Ensure columns are simple
+    df = df[['Open','High','Low','Close','Volume']].copy()
+
+    # Indicators
     df['RSI'] = RSI(df['Close'])
     df['EMA20'] = EMA(df['Close'], 20)
     df['EMA50'] = EMA(df['Close'], 50)
     df['MACD'], df['MACD_signal'] = MACD(df['Close'])
 
-    # Simple rule-based scoring
+    # Simple scoring
     score = 0
     if df['RSI'].iloc[-1] < 30:
         score += 15
@@ -62,7 +62,6 @@ def predict_stock(ticker, momentum_days=10):
     else:
         score -= 5
 
-    # Final prediction
     if score > 10:
         prediction = "Likely Up"
     elif score < -10:
@@ -71,9 +70,13 @@ def predict_stock(ticker, momentum_days=10):
         prediction = "Neutral"
 
     # -----------------------------
-    # Fix index for frontend plotting
+    # Clean df for plotting
     # -----------------------------
-    df = df.reset_index()  # make Date a column
-    df['Date'] = pd.to_datetime(df['Date'])  # ensure datetime
-
+    df = df.reset_index()  # Date as column
+    df['Date'] = pd.to_datetime(df['Date'])
+    
+    # Ensure numeric
+    for col in ['Close','EMA20','EMA50']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
     return df, prediction
